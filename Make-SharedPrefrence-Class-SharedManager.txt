@@ -78,7 +78,7 @@ class SharedPrefManager(context: Context) {
 
 
 
-Use -- 
+Usage Example: -- 
 
 val sharedPrefManager = SharedPrefManager(context)
 
