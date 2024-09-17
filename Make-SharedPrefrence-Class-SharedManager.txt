@@ -1,0 +1,100 @@
+import android.content.Context
+import android.content.SharedPreferences
+import android.util.Log
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+
+class SharedPrefManager(context: Context) {
+
+    private val sharedPreferences: SharedPreferences = context.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+    private val editor: SharedPreferences.Editor = sharedPreferences.edit()
+    private val gson = Gson()
+
+    // Generic method to save any data type
+    fun <T> saveData(key: String, value: T) {
+        when (value) {
+            is Int -> {
+                editor.putInt(key, value)
+                Log.d("SharedPrefManager", "Saving Int value: $value with key: $key")
+            }
+            is String -> {
+                editor.putString(key, value)
+                Log.d("SharedPrefManager", "Saving String value: $value with key: $key")
+            }
+            is Boolean -> {
+                editor.putBoolean(key, value)
+                Log.d("SharedPrefManager", "Saving Boolean value: $value with key: $key")
+            }
+            else -> {
+                // Convert complex types to JSON
+                val json = gson.toJson(value)
+                editor.putString(key, json)
+                Log.d("SharedPrefManager", "Saving Object as JSON: $json with key: $key")
+            }
+        }
+        editor.apply()
+    }
+
+    // Generic method to retrieve any data type
+    fun <T> getData(key: String, defaultValue: T): T {
+        val result: T = when (defaultValue) {
+            is Int -> {
+                val value = sharedPreferences.getInt(key, defaultValue)
+                Log.d("SharedPrefManager", "Retrieving Int value: $value with key: $key")
+                value as T
+            }
+            is String -> {
+                val value = sharedPreferences.getString(key, defaultValue) ?: defaultValue
+                Log.d("SharedPrefManager", "Retrieving String value: $value with key: $key")
+                value as T
+            }
+            is Boolean -> {
+                val value = sharedPreferences.getBoolean(key, defaultValue)
+                Log.d("SharedPrefManager", "Retrieving Boolean value: $value with key: $key")
+                value as T
+            }
+            else -> {
+                val json = sharedPreferences.getString(key, null)
+                val value: T = if (json != null) {
+                    val type = object : TypeToken<T>() {}.type
+                    gson.fromJson<T>(json, type)
+                } else {
+                    defaultValue
+                }
+                Log.d("SharedPrefManager", "Retrieving Object from JSON: $json with key: $key")
+                value
+            }
+        }
+        return result
+    }
+
+    // Function to clear all data
+    fun clearData() {
+        editor.clear()
+        editor.apply()
+        Log.d("SharedPrefManager", "All SharedPreferences data cleared.")
+    }
+}
+
+
+
+Use -- 
+
+val sharedPrefManager = SharedPrefManager(context)
+
+// Saving data
+sharedPrefManager.saveData("key_int", 123)
+sharedPrefManager.saveData("key_string", "Hello")
+sharedPrefManager.saveData("key_boolean", true)
+
+// Saving custom object
+val customObject = MyCustomClass("example", 123)
+sharedPrefManager.saveData("key_object", customObject)
+
+// Retrieving data
+val intValue: Int = sharedPrefManager.getData("key_int", 0)
+val stringValue: String = sharedPrefManager.getData("key_string", "")
+val booleanValue: Boolean = sharedPrefManager.getData("key_boolean", false)
+
+// Retrieving custom object
+val retrievedObject: MyCustomClass = sharedPrefManager.getData("key_object", MyCustomClass("default", 0))
